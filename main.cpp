@@ -1,16 +1,15 @@
 #include <windows.h>
-#include <iostream>
-#include <fileapi.h>
-#include <errhandlingapi.h>
 #include <consoleapi2.h>
 #include <processenv.h>
+#include <conio.h>
+#include <thread>
+#include "SerialPort.h"
+
 using namespace std;
 
-HANDLE serial;
-LPCTSTR name = L"COM3";
-DCB sParams;
+LPCTSTR namePort = L"COM3";
 
-// data,time,status;
+char datas[INPUT_DATA_BYTES];
 
 void CursorVisibility(BOOL status)
 {
@@ -19,15 +18,20 @@ void CursorVisibility(BOOL status)
 	SetConsoleCursorInfo(consoleHandle, &info);
 }
 
-void SerialRead()
+SerialPort port(namePort);
+void task2()
 {
-	DWORD inputDataSize;
-	char receivedChar;
-	while (true)
+	while (port.isConneted())
 	{
-		BOOL a = ReadFile(serial, &receivedChar, 1, &inputDataSize, 0);
-		if (inputDataSize > 0) {
-			cout << receivedChar;
+		if (_kbhit())
+		{
+			switch (_getch())
+			{
+				case 97:
+					cout << "KEY PRESSED" << endl;
+					port.WritePort("a");
+					break;
+			}
 		}
 	}
 }
@@ -35,41 +39,29 @@ void SerialRead()
 int main()
 {
 	CursorVisibility(FALSE);
-	cout << ">> begin\n";
+	setlocale(LC_ALL, "RU");
 
-	serial = CreateFile(name, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
-	if (serial == INVALID_HANDLE_VALUE)
+	//thread th(task2);
+
+	if (port.isConneted())
 	{
-		if (GetLastError() == ERROR_FILE_NOT_FOUND)
+		cout << "Подключение к ";
+		wcout << namePort << '\n';
+		while (port.isConneted())
 		{
-			cout << ">> serial port does not exist\n";
-			CloseHandle(serial);
-			return 0;
+			cout << port.ReadPort(datas, INPUT_DATA_BYTES);
+			if (_kbhit())
+			{
+				switch (_getch())
+				{
+					case 97:
+						cout << "KEY PRESSED" << endl;
+						port.WritePort("a");
+						break;
+				}
+			}
 		}
-		cout << ">> some other error occurred\n";
-		CloseHandle(serial);
-		return 0;
 	}
-
-	if (!GetCommState(serial, &sParams))
-	{
-		cout << ">> getting state error\n";
-		CloseHandle(serial);
-		return 0;
-	}
-	sParams.BaudRate = CBR_9600;
-	sParams.ByteSize = 8;
-	sParams.StopBits = ONESTOPBIT;
-	sParams.Parity = NOPARITY;
-	if (!SetCommState(serial, &sParams))
-	{
-		cout << ">> error setting serial port state\n";
-		CloseHandle(serial);
-		return 0;
-	}
-
-	cout << ">> reading\n";
-	SerialRead();
-
+	//th.join();
 	return 0;
 }
