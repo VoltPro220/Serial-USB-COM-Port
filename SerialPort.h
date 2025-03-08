@@ -3,20 +3,29 @@
 #ifndef _SERIALPORT_H_
 #define _SERIALPORT_H_
 
-#define WAIT_TIME 3000 // Ожидание после подключения, чтобы дескриптор
-// успел за заданное время стабилизироваться
+// Waiting after connection so that the handle
+// has time to stabilize in a given time
+#define WAIT_TIME 3000 
 
-#define INPUT_DATA_BYTES 10 // Кол-во принимаемых байтов (Можно менять)
+// Number of bytes received (Can be changed)
+#define INPUT_DATA_BYTES 10
 
-// ****** Настройки подлкюченного порта **********
+// ************ Connected Port Settings **********
 #define CBR_BAUD CBR_9600
 #define BYTESIZE 8
 #define STOPBITS ONESTOPBIT
 #define PARITY NOPARITY
-#define FDTRCONTROL DTR_CONTROL_ENABLE
-// **** Настройки стоят по умолчанию, их менять не обязательно ****
 
-// Коды ошибок при установки настроек подключенного дескриптора
+// **** The settings are set by default, you don't have to change them. ****
+
+// fields of the DCB structure, which sets the exchange control mode for the DTR signal. 
+// Optional parameter, but if you need to change it, then uncomment the definition and 
+// set your own parameter (Read the documentation)
+
+//#define SETFDTRCONTROL
+#define FDTRCONTROL DTR_CONTROL_ENABLE
+
+// Error codes when setting the settings of the connected descriptor
 #define PARAMS_COULDNT_SET 3L
 #define PARAMS_COULDNT_FOUND 4L
 #define COULD_NOT_WRITE 6L
@@ -29,28 +38,33 @@
 class SerialPort
 {
 private:
-	// Дескриптор об устройстве
+
+	// Device Descriptor
 	HANDLE serial;
-	// true - подключение успешное
-	// false - не успешное подключение
+	// true - connection is successful
+	// false - connection is not successful
 	BOOL isConnected;
-	// Содержит много данных о состоянии канала связи
+	// Contains a lot of data about the status of the communication channel
+	// It is useful for setting parameters.
 	COMSTAT comStatus;
-	// Номер ошибки, в случаи возникновения ошибки
+	// Error number, in case of an error
 	DWORD err;
-	
+	// The name of port, need for return when calling method getPortName();
 	std::wstring portName;
 
+	void connectToComPort(std::wstring portName);
+
 public:
+	
 	SerialPort(std::wstring portName);
 	SerialPort();
 	~SerialPort();
-	BOOL connect(std::wstring portName);
+	void connect(std::wstring portName);
 
 	std::wstring readPort(const size_t size);
 	BOOL writePort(const std::wstring& data);
 	BOOL isConneted() const;
-	VOID disconnect();
+	void disconnect();
 	std::vector<std::wstring> findAvailableComPorts();
 	std::wstring getPortName();
 };

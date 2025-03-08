@@ -1,130 +1,44 @@
 #include "SerialPort.h"
 
-SerialPort::SerialPort(std::wstring portName)
+void SerialPort::connectToComPort(std::wstring portName)
 {
 	this->err = 0;
 	this->comStatus = { 0 };
 	this->isConnected = FALSE;
 
-	// Создаём и открываем дескриптор ввода/вывода.
-	this->serial = CreateFile(portName.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
-
-	// ***************** HANDLE errors *******************
-	// Используйте функцию Win32 API для получения последней ошибки. 
-	// Она возвращает целочисленный код ошибки. Там
-	// содержит около 16 000 кодов ошибок, нас интересуют только два 
-	// (подключено ли устройство? и используется ли оно уже другим приложением ? ).
-
-	DWORD errMsg = GetLastError();
-
-	// win32 код ошибки для ERROR_FILE_NOT_FOUND это DWORD 2L
-	// Говорит о том, что устройство не подключено или не найдено
-	if (errMsg == ERROR_FILE_NOT_FOUND)
-	{
-		std::wcout << "ERROR #2L: \"\\." << portName.c_str() << "\" I/O device NOT found\n";
-	}
-
-	// win32 код ошибки для ERROR_ACCESS_DENIED это DWORD 5L
-	// Это значит то, что доступ запрещён, так как оно используется
-	// в другой программе.
-	else if (errMsg == ERROR_ACCESS_DENIED)
-	{
-		std::wcout << "ERROR #5L: доступ запрещён: \"\\." << portName.c_str() << "\"";
-	}
-
-	// ****************** Конфигурация COM порта ****************************
-	// Если всё хорошо, то конфигурирует последовательный COM порт
-	else if (errMsg == 0)
-	{
-		// DCB это "Divece Control Block" - стуктура, которая хранит настройки
-		// дестрибутива. Устанавливаем параметры COM порта. (Поменять их можно)
-		// В заголовочном файле SerialPort.h в определениях
-		DCB dcbSerialParameters = { 0 };
-		if (!GetCommState(serial, &dcbSerialParameters))
-		{
-			printf("ERROR #4L: ошибка при получении параметров дестрибутива");
-		}
-		else
-		{
-			dcbSerialParameters.BaudRate = CBR_BAUD;
-			dcbSerialParameters.ByteSize = BYTESIZE;
-			dcbSerialParameters.StopBits = STOPBITS;
-			dcbSerialParameters.Parity = PARITY;
-			//dcbSerialParameters.fDtrControl = FDTRCONTROL;
-
-			// Устанавливаем параметры, если это не удалось, появляется ошибка
-			if (!GetCommState(serial, &dcbSerialParameters))
-			{
-				printf("ERROR #3L: Параметры не были установлены последовательному COM порту");
-				CloseHandle(serial);
-			}
-			else
-			{
-				this->isConnected = TRUE;
-				this->portName = portName;
-				PurgeComm(serial, PURGE_RXCLEAR | PURGE_TXCLEAR);
-				Sleep(WAIT_TIME);
-			}
-		}
-
-	}
-
-
-}
-
-SerialPort::SerialPort()
-{
-	this->err = 0;
-	this->comStatus = { 0 };
-	this->isConnected = FALSE;
-}
-
-SerialPort::~SerialPort()
-{
-	if (this->isConnected)
-	{
-		this->isConnected = FALSE;
-		CloseHandle(serial);
-	}
-}
-
-BOOL SerialPort::connect(std::wstring portName)
-{
-	if(this->isConnected == TRUE)
-		return FALSE;
-
+	// Creating and opening an input/output descriptor.
 	this->serial = CreateFileW(portName.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
 
 	// ***************** HANDLE errors *******************
-	// Используйте функцию Win32 API для получения последней ошибки. 
-	// Она возвращает целочисленный код ошибки. Там
-	// содержит около 16 000 кодов ошибок, нас интересуют только два 
-	// (подключено ли устройство? и используется ли оно уже другим приложением ? ).
+	// Use the Win32 API function to get the latest error.
+	// It returns an integer error code. There
+	// it contains about 16,000 error codes, we are only interested in two
+	// (is the device connected? and is it already being used by another application? ).
 
 	DWORD errMsg = GetLastError();
 
-	// win32 код ошибки для ERROR_FILE_NOT_FOUND это DWORD 2L
-	// Говорит о том, что устройство не подключено или не найдено
+	// the win32 error code for ERROR_FILE_NOT_FOUND is DWORD 2L
+	// Indicates that the device is not connected or has not been found.
 	if (errMsg == ERROR_FILE_NOT_FOUND)
 	{
 		std::wcout << "ERROR #2L: \"\\." << portName.c_str() << "\" I/O device NOT found\n";
 	}
 
-	// win32 код ошибки для ERROR_ACCESS_DENIED это DWORD 5L
-	// Это значит то, что доступ запрещён, так как оно используется
-	// в другой программе.
+	// the win32 error code for ERROR_ACCESS_DENIED is DWORD 5L
+	// This means that access is denied because it is being used.
+	// in another program.
 	else if (errMsg == ERROR_ACCESS_DENIED)
 	{
 		std::wcout << "ERROR #5L: can`t open: \"\\." << portName.c_str() << "\"";
 	}
 
-	// ****************** Конфигурация COM порта ****************************
-	// Если всё хорошо, то конфигурирует последовательный COM порт
+	// ****************** COM Port Configuration ****************************
+	// If everything is fine, it configures the serial COM port.
 	else if (errMsg == 0)
 	{
-		// DCB это "Divece Control Block" - стуктура, которая хранит настройки
-		// дестрибутива. Устанавливаем параметры COM порта. (Поменять их можно)
-		// В заголовочном файле SerialPort.h в определениях
+		// DCB is a "Device Control Block", a structure that stores settings
+		// distribution kit. Setting the COM port parameters. (You can change them)
+		// In the SerialPort.h header file in the definitions
 		DCB dcbSerialParameters = { 0 };
 		if (!GetCommState(serial, &dcbSerialParameters))
 		{
@@ -136,12 +50,14 @@ BOOL SerialPort::connect(std::wstring portName)
 			dcbSerialParameters.ByteSize = BYTESIZE;
 			dcbSerialParameters.StopBits = STOPBITS;
 			dcbSerialParameters.Parity = PARITY;
-			//dcbSerialParameters.fDtrControl = FDTRCONTROL;
+#ifdef SETFDTRCONTROL
+			dcbSerialParameters.fDtrControl = FDTRCONTROL;
+#endif
 
-			// Устанавливаем параметры, если это не удалось, появляется ошибка
+			// Set the parameters, if this fails, an error appears.
 			if (!GetCommState(serial, &dcbSerialParameters))
 			{
-				std::wcout << "ERROR #4L: \"\\." << portName.c_str() << "\" Couldn't set parameters\n";
+				std::wcout << "ERROR #3L: \"\\." << portName.c_str() << "\" Couldn't set parameters\n";
 				CloseHandle(serial);
 			}
 			else
@@ -150,26 +66,46 @@ BOOL SerialPort::connect(std::wstring portName)
 				this->portName = portName;
 				PurgeComm(serial, PURGE_RXCLEAR | PURGE_TXCLEAR);
 				Sleep(WAIT_TIME);
-				return TRUE;
 			}
 		}
 
 	}
-	return FALSE;
+}
+
+SerialPort::SerialPort(std::wstring portName)
+{
+	this->connectToComPort(portName);
+}
+
+SerialPort::SerialPort()
+{
+	this->err = 0;
+	this->comStatus = { 0 };
+	this->isConnected = FALSE;
+}
+
+SerialPort::~SerialPort()
+{
+	this->disconnect();
+}
+
+void SerialPort::connect(std::wstring portName)
+{
+	if(this->isConnected == TRUE)
+		return;
+	this->connectToComPort(portName);
 }
 
 std::wstring SerialPort::readPort(const size_t size)
 {
-	DWORD bytes;
 	size_t toRead = 0;
 	ClearCommError(serial, &err, &comStatus);
 
-	// Определите, сколько байт нужно прочитать в последующем методе ReadFile().
-	//
-	// cdInQue - это количество байт, полученных в последовательном порту, но
-	// еще не считанных операцией ReadFile.
-	// Подготовьтесь к чтению любых доступных байт, но не превышайте 
-	// запрошенное количество байт
+	// Determine how many bytes to read in the subsequent ReadFile() method.
+	// cbinque is the number of bytes received in the serial port, but
+	// not yet read by the ReadFile operation.
+	// Prepare to read any available bytes, but do not exceed
+	// the requested number of bytes
 	if (comStatus.cbInQue > 0)
 	{
 		if (comStatus.cbInQue > size)
@@ -182,17 +118,17 @@ std::wstring SerialPort::readPort(const size_t size)
 		}
 	}
 
-	// Считывает запрошенные ("для чтения") байты в "буфер" 
-	// и возвращает количество байт фактически прочитанных
+	// Reads the requested data ("for reading") bytes to the "buffer"
+	// and returns the number of bytes actually read
 	std::vector<char> buffer(toRead + 1);
 	DWORD bytesRead;
 	BOOL result = ReadFile(serial, buffer.data(), toRead, &bytesRead, NULL);
 
-	// Конвертация из char в wchar_t
+	// Conversion from char to wchar_t
 	std::wstring data = L"";
 	if (result)
 	{
-		buffer[bytesRead] = '\0'; // Завершаем строку
+		buffer[bytesRead] = '\0';
 		int wideCharCount = MultiByteToWideChar(CP_UTF8, 0, buffer.data(), bytesRead, NULL, 0);
 		if (wideCharCount > 0)
 		{
