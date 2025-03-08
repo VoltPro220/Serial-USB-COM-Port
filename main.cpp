@@ -2,7 +2,7 @@
 #include <consoleapi2.h>
 #include <processenv.h>
 #include <conio.h>
-#include <thread>
+#include <string>
 #include "SerialPort.h"
 
 using namespace std;
@@ -47,6 +47,7 @@ int main()
 	{
 		cout << "Подключение к ";
 		wcout << namePort << '\n';
+		bool st = 0;
 		while (port.isConneted())
 		{
 			cout << port.ReadPort(datas, INPUT_DATA_BYTES);
@@ -55,9 +56,12 @@ int main()
 				switch (_getch())
 				{
 					case 97:
-						cout << "KEY PRESSED" << endl;
-						port.WritePort("a");
+						st = !st;
+						port.WritePort("0,0," + to_string(st) + ";");
 						break;
+					case 120:
+						port.disconnect();
+					break;
 				}
 			}
 		}

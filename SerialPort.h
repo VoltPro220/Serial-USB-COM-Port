@@ -3,7 +3,7 @@
 #ifndef _SERIALPORT_H_
 #define _SERIALPORT_H_
 
-#define WAIT_TIME 2000 // Ожидание после подключения, чтобы дескриптор
+#define WAIT_TIME 3000 // Ожидание после подключения, чтобы дескриптор
 // успел за заданное время стабилизироваться
 
 #define INPUT_DATA_BYTES 10 // Кол-во принимаемых байтов (Можно менять)
@@ -48,6 +48,7 @@ public:
 	char ReadPort(char* buffer, const size_t size);
 	BOOL WritePort(const std::string& data);
 	BOOL isConneted() const;
+	void disconnect();
 };
 
 

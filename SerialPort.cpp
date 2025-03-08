@@ -124,7 +124,7 @@ BOOL SerialPort::WritePort(const std::string& data)
 	}
 	else
 	{
-		std::cout << "Sent " << bytesWritten << " bytes." << std::endl;
+		std::cout << "\nSent " << bytesWritten << " bytes." << std::endl;
 		return TRUE;
 	}
 }
@@ -132,4 +132,13 @@ BOOL SerialPort::WritePort(const std::string& data)
 BOOL SerialPort::isConneted() const
 {
 	return this->isConnected;
+}
+
+void SerialPort::disconnect()
+{
+	if (this->isConnected)
+	{
+		this->isConnected = FALSE;
+		CloseHandle(serial);
+	}
 }
