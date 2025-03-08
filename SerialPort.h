@@ -19,13 +19,12 @@
 // Коды ошибок при установки настроек подключенного дескриптора
 #define PARAMS_COULDNT_SET 3L
 #define PARAMS_COULDNT_FOUND 4L
+#define COULD_NOT_WRITE 6L
 
 #include <windows.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <basetsd.h>
-#include <cstdio>
 #include <iostream>
+#include <string>
+#include <vector>
 
 class SerialPort
 {
@@ -39,16 +38,21 @@ private:
 	COMSTAT comStatus;
 	// Номер ошибки, в случаи возникновения ошибки
 	DWORD err;
+	
+	std::wstring portName;
 
-	DWORD outBytesWritten;
 public:
-	SerialPort(LPCTSTR portName);
+	SerialPort(std::wstring portName);
+	SerialPort();
 	~SerialPort();
-	 
-	char ReadPort(char* buffer, const size_t size);
-	BOOL WritePort(const std::string& data);
+	BOOL connect(std::wstring portName);
+
+	std::wstring readPort(const size_t size);
+	BOOL writePort(const std::wstring& data);
 	BOOL isConneted() const;
-	void disconnect();
+	VOID disconnect();
+	std::vector<std::wstring> findAvailableComPorts();
+	std::wstring getPortName();
 };
 
 
